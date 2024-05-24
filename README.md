@@ -23,23 +23,29 @@ go build
 **Command**
 
 ```
-./lido-operator key-generator -h                                                        
-key-generator
+./lido-operator -h                                                                      
+lido operator tool
 
 Usage:
-  lido-operator key-generator [flags]
+  lido-operator [command]
 
-Examples:
-./lido-operator key-generator
+Available Commands:
+  completion        Generate the autocompletion script for the specified shell
+  help              Help about any command
+  key-generator     key-generator
+  split-depositdata split-depositdata
 
 Flags:
   -d, --depositDataPath string   deposit data file path
-  -h, --help                     help for key-generator
+  -h, --help                     help for lido-operator
   -i, --inputDataDir string      inputdata output dir (default ".")
   -o, --operatorId int           operator id (default -1)
+  -s, --splitCount int           deposit data split count (default 100)
+
+Use "lido-operator [command] --help" for more information about a command.
 ```
 
-- --operatorid is required,  it participates in the generation of inputdata
+- cmd ./lido-operator key-generator --operatorid is required,  it participates in the generation of inputdata
 
 
 
@@ -47,5 +53,9 @@ cmd example:
 
 ```
 ./lido-operator key-generator -o 29 -d ./deposit-data.json -i .
+```
+
+```
+./lido-operator split-depositdata -d ./deposit-data.json -i . -s 400
 ```
 
