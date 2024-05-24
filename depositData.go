@@ -18,9 +18,7 @@ type DepositData struct {
 	DepositCliVersion     string `json:"deposit_cli_version"`
 }
 
-const spiteCount = 100
-
-func SpiteDepositData(depositDataPath string) ([][]DepositData, error) {
+func SplitDepositData(depositDataPath string, splitCount int) ([][]DepositData, error) {
 	data, err := os.ReadFile(depositDataPath)
 	if err != nil {
 		return nil, err
@@ -34,31 +32,31 @@ func SpiteDepositData(depositDataPath string) ([][]DepositData, error) {
 
 	depositDatasLen := len(depositDatas)
 
-	if len(depositDatas) <= spiteCount {
+	if len(depositDatas) <= splitCount {
 		return [][]DepositData{depositDatas}, nil
 	}
 
-	count := len(depositDatas) / spiteCount
-	if len(depositDatas)%spiteCount != 0 {
+	count := len(depositDatas) / splitCount
+	if len(depositDatas)%splitCount != 0 {
 		count++
 	}
 
 	var batchDepositDatas = [][]DepositData{}
-	spiteLen := 0
+	splitLen := 0
 	for i := 0; i < count; i++ {
-		start := i * spiteCount
-		end := start + spiteCount
+		start := i * splitCount
+		end := start + splitCount
 		if i == count-1 {
 			end = len(depositDatas)
 		}
 		tem := depositDatas[start:end]
 
-		spiteLen += len(tem)
+		splitLen += len(tem)
 
 		batchDepositDatas = append(batchDepositDatas, tem)
 	}
 
-	if spiteLen != depositDatasLen {
+	if splitLen != depositDatasLen {
 		fmt.Println("Length mismatch after splitting")
 		os.Exit(1)
 	}

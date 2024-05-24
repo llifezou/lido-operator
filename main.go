@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
@@ -11,6 +12,7 @@ import (
 
 var (
 	operatorId      int
+	splitCount      int
 	depositDataPath string
 	outputDir       string
 )
@@ -25,14 +27,37 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	keyGenerator.PersistentFlags().StringVarP(&depositDataPath, "depositDataPath", "d", "", "deposit data file path")
-	keyGenerator.PersistentFlags().StringVarP(&outputDir, "inputDataDir", "i", ".", "inputdata output dir")
-	keyGenerator.PersistentFlags().IntVarP(&operatorId, "operatorId", "o", -1, "operator id")
+	rootCmd.PersistentFlags().StringVarP(&depositDataPath, "depositDataPath", "d", "", "deposit data file path")
+	rootCmd.PersistentFlags().StringVarP(&outputDir, "inputDataDir", "i", ".", "inputdata output dir")
+	rootCmd.PersistentFlags().IntVarP(&operatorId, "operatorId", "o", -1, "operator id")
+	rootCmd.PersistentFlags().IntVarP(&splitCount, "splitCount", "s", 100, "deposit data split count")
 }
 
 func main() {
-	rootCmd.AddCommand(keyGenerator)
+	rootCmd.AddCommand(splitDepositDataCmd, keyGenerator)
 	_ = rootCmd.Execute()
+}
+
+var splitDepositDataCmd = &cobra.Command{
+	Use:     "split-depositdata",
+	Short:   "split-depositdata",
+	Example: "./lido-operator split-depositdata",
+	Run: func(cmd *cobra.Command, args []string) {
+		batchDepositDatas, err := SplitDepositData(depositDataPath, splitCount)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		for i, depositDatas := range batchDepositDatas {
+			d, err := json.Marshal(depositDatas)
+			if err != nil {
+				fmt.Println(err.Error())
+				return
+			}
+
+			writeFunc(i+1, "deposit-data.json", d)
+		}
+	},
 }
 
 var keyGenerator = &cobra.Command{
@@ -47,7 +72,7 @@ var keyGenerator = &cobra.Command{
 
 		nodeOperatorId := big.NewInt(int64(operatorId))
 
-		batchDepositDatas, err := SpiteDepositData(depositDataPath)
+		batchDepositDatas, err := SplitDepositData(depositDataPath, splitCount)
 		if err != nil {
 			fmt.Println(err.Error())
 			return
@@ -70,13 +95,13 @@ var keyGenerator = &cobra.Command{
 				fmt.Println(err.Error())
 				os.Exit(1)
 			}
-			writeFunc(i+1, []byte("0x"+common.Bytes2Hex(inputData)))
+			writeFunc(i+1, "transactionData.txt", []byte("0x"+common.Bytes2Hex(inputData)))
 		}
 	},
 }
 
-func writeFunc(i int, d []byte) {
-	fi, err := os.Create(filepath.Join(outputDir, fmt.Sprintf("%d-transactionData.txt", i)))
+func writeFunc(i int, name string, d []byte) {
+	fi, err := os.Create(filepath.Join(outputDir, fmt.Sprintf("%d-%s", i, name)))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
